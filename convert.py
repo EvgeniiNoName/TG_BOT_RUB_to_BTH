@@ -41,8 +41,9 @@ def extract_data_from_html(src):
     soup = BeautifulSoup(src, "lxml")
     all = soup.find_all("div", class_="xxx-text-bold xxx-fs-24 xxx-adjustment-line-h")
     onv_cny = all[1].find("span").get_text(strip=True)
+    print("Курс CNY→RUB: ", onv_cny)
     cny = round(1 / float(onv_cny), 2)
-    print(cny)
+    print("Курс RUB→CNY: ",cny)
     return cny
 
 def download_baht(url):
@@ -107,7 +108,7 @@ def download_baht(url):
         match = re.search(r'1CNY\s*=\s*([\d.,]+)\s*THB', text)
         if match:
             thb = float(match.group(1).replace(',', ''))
-            # print("Курс CNY→THB:", thb)
+            print("Курс CNY→THB:", thb)
             return thb
         else:
             print("Не удалось найти курс")

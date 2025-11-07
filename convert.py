@@ -53,9 +53,10 @@ def download_baht(url):
 
     # --- Настройки Selenium ---
     options = Options()
-    options.add_argument('--headless')
-    options.add_argument('--disable-gpu')
-    options.add_argument('--no-sandbox')
+    options.add_argument("--headless")  # без GUI
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-gpu")
 
     driver = webdriver.Chrome(options=options)
 

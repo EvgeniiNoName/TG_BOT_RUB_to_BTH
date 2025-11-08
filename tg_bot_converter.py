@@ -47,11 +47,12 @@ def handle_message(message):
         msg_text = f"📊 Курс по состоянию на {request_time.strftime('%d.%m.%Y %H:%M')}:\n"
 
         if onv_cny:
-            msg_text += f"RUB → CNY: {onv_cny}\n"
+            msg_text += f"1 CNY = {onv_cny} RUB\n"
 
         if thb:
-            msg_text += f"CNY → THB: {thb}\n"
-
+            msg_text += f"1 CNY = {thb} THB: \n"
+            
+        msg_text += "-------------------\n"
         msg_text += f"1 RUB = {rate} THB\n"
         msg_text += f"1 THB = {round(1 / rate, 2)} RUB"
 

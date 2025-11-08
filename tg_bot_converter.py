@@ -38,14 +38,24 @@ def handle_message(message):
         # Сразу отправляем сообщение "ожидайте"
         waiting_msg = bot.send_message(
             chat_id, '⏳ Пожалуйста, подождите, получаю данные...')
-        rate, request_time = timeout()
+
+        # Получаем все значения из кэша или нового запроса
+        rate, request_time, thb, cny, onv_cny = timeout()
         bot.delete_message(chat_id, waiting_msg.message_id)
-        bot.send_message(
-            chat_id,
-            f"📊 Курс по состоянию на {request_time.strftime('%d.%m.%Y %H:%M')}:\n"
-            f'1 RUB = {rate} THB\n'
-            f'1 THB = {round(1 / rate, 2)} RUB'
-        )
+
+        # Формируем текст сообщения с промежуточными и конечными курсами
+        msg_text = f"📊 Курс по состоянию на {request_time.strftime('%d.%m.%Y %H:%M')}:\n"
+
+        if onv_cny:
+            msg_text += f"RUB → CNY: {onv_cny}\n"
+
+        if thb:
+            msg_text += f"CNY → THB: {thb}\n"
+
+        msg_text += f"1 RUB = {rate} THB\n"
+        msg_text += f"1 THB = {round(1 / rate, 2)} RUB"
+
+        bot.send_message(chat_id, msg_text)
 
     # --- 2. Начало конвертации ---
     elif text == 'Конвертировать баты':
@@ -54,7 +64,7 @@ def handle_message(message):
 
     # --- 3. Пользователь вводит сумму ---
     elif user_states.get(chat_id) == 'awaiting_baht':
-        rate, _ = timeout()
+        rate, _, _, _, _ = timeout()  # Получаем только rate для конверсии
         result = calculation(rate, text)
         if result:
             bot.send_message(chat_id, result, reply_markup=main_menu())
@@ -68,6 +78,7 @@ def handle_message(message):
             chat_id,
             'Выберите действие:',
             reply_markup=main_menu())
+
 
 
 if __name__ == '__main__':

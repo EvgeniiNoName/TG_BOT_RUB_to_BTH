@@ -11,20 +11,29 @@ def timeout():
     if os.path.exists(CACHE_FILE):
         with open(CACHE_FILE, 'r') as f:
             data = json.load(f)
-            rate = data['rate']
-            request_time = datetime.fromisoformat(data['time'])
+            rate = data.get('rate')
+            request_time = datetime.fromisoformat(data.get('time'))
+            thb = data.get('thb')
+            cny = data.get('cny')
+            onv_cny = data.get('onv_cny')
 
             if datetime.now() - request_time < timedelta(hours=1):
-                return rate, request_time
+                return rate, request_time, thb, cny, onv_cny
 
     # Новый запрос
-    rate, request_time = conversion_rate()
+    rate, request_time, thb, cny, onv_cny = conversion_rate()
 
-    # Сохраняем кэш
+    # Сохраняем кэш со всеми значениями
     with open(CACHE_FILE, 'w') as f:
-        json.dump({'rate': rate, 'time': request_time.isoformat()}, f)
+        json.dump({
+            'rate': rate,
+            'time': request_time.isoformat(),
+            'thb': thb,
+            'cny': cny,
+            'onv_cny': onv_cny
+        }, f, ensure_ascii=False)
 
-    return rate, request_time
+    return rate, request_time, thb, cny, onv_cny
 
 
 def calculation(res, baht):
@@ -46,11 +55,15 @@ def calculation(res, baht):
     return f"💰 {baht_str} бат = {rub_str} рублей"
 
 
-
 def main():
-    res, request_time = timeout()
-    print(f'Курс 1 RUB = {res} THB')
-    print(f'Курс 1 THB = {round(1 / res, 2)} RUB')
+    res, request_time, thb, cny, onv_cny = timeout()
+    print(f'Курс RUB→THB: {res}')
+    print(f'Курс THB→RUB: {round(1 / res, 2)}')
+    if cny and onv_cny:
+        print(f'Курс RUB→CNY: {onv_cny}')
+        print(f'Курс CNY→RUB: {cny}')
+    if thb:
+        print(f'Курс CNY→THB: {thb}')
 
 
 if __name__ == '__main__':

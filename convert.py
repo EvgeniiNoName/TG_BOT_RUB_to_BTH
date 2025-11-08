@@ -64,7 +64,7 @@ def extract_data_from_html(src):
     print('Курс RUB→CNY→:', onv_cny)
     cny = round(1 / float(onv_cny), 2)
     print('Курс CNY→RUB:', cny)
-    return cny
+    return cny, onv_cny
 
 
 
@@ -165,9 +165,8 @@ def conversion_rate():
     start_page = download_page(url_cny)
     if not start_page:
         return
-    cny = extract_data_from_html(start_page)
+    cny, onv_cny = extract_data_from_html(start_page)
     thb = download_baht(url_union_pay)
     res = convert(cny, thb)
-    request_time = request_time = datetime.now()
-
-    return res, request_time
+    request_time = datetime.now()
+    return res, request_time, thb, cny, onv_cny

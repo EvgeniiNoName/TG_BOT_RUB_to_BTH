@@ -11,7 +11,8 @@ from datetime import datetime
 
 
 # URL
-url_cny = 'https://bankiros.ru/bank/rshb/currency/cny'
+# url_cny = 'https://bankiros.ru/bank/rshb/currency/cny'
+url_cny = 'https://ru.myfin.by/bank/rshb/currency/krasnoyarsk'
 url_union_pay = 'https://www.unionpayintl.com/cn/rate/'
 
 # Заголовки для имитации реального пользователя
@@ -40,13 +41,39 @@ def download_page(url):
 
 def extract_data_from_html(src):
     soup = BeautifulSoup(src, 'lxml')
-    all = soup.find_all(
-        'div', class_='xxx-text-bold xxx-fs-24 xxx-adjustment-line-h')
-    onv_cny = all[1].find('span').get_text(strip=True)
-    print('Курс CNY→RUB: ', onv_cny)
-    cny = round(1 / float(onv_cny), 2)
-    print('Курс RUB→CNY: ', cny)
+
+    # ищем строку с Юанем
+    row = None
+    for tr in soup.find_all('tr'):
+        a_tag = tr.find('a')
+        if a_tag and 'Юань' in a_tag.text:
+            row = tr
+            break
+
+    if not row:
+        print("!!!_Не найдено значение для юаня в HTML.")
+        return None
+
+    # находим все <td> в строке
+    tds = row.find_all('td')
+    if len(tds) < 3:
+        print("!!!_Недостаточно данных в строке.")
+        return None
+
+    cny = tds[2].get_text(strip=True)  # третий <td> — продажа
+    print('Курс CNY→RUB:', cny)
     return cny
+
+
+
+    # soup = BeautifulSoup(src, 'lxml')
+    # all = soup.find_all(
+    #     'div', class_='xxx-text-bold xxx-fs-24 xxx-adjustment-line-h')
+    # onv_cny = all[1].find('span').get_text(strip=True)
+    # print('Курс CNY→RUB: ', onv_cny)
+    # cny = round(1 / float(onv_cny), 2)
+    # print('Курс RUB→CNY: ', cny)
+    # return cny
 
 
 def download_baht(url):

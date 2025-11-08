@@ -3,7 +3,8 @@ from datetime import datetime, timedelta
 from convert import conversion_rate
 import os
 
-CACHE_FILE = 'rate_cache.json'
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CACHE_FILE = os.path.join(BASE_DIR, 'rate_cache.json')
 
 
 def timeout():

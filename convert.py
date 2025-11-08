@@ -60,7 +60,9 @@ def extract_data_from_html(src):
         print("!!!_Недостаточно данных в строке.")
         return None
 
-    cny = tds[2].get_text(strip=True)  # третий <td> — продажа
+    onv_cny = tds[2].get_text(strip=True)  # третий <td> — продажа
+    print('Курс RUB→CNY→:', onv_cny)
+    cny = round(1 / float(onv_cny), 2)
     print('Курс CNY→RUB:', cny)
     return cny
 

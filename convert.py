@@ -61,7 +61,7 @@ def extract_data_from_html(src):
         return None
 
     onv_cny = tds[2].get_text(strip=True)  # третий <td> — продажа
-    print('Курс RUB→CNY→:', onv_cny)
+    print('Курс RUB→CNY:', onv_cny)
     cny = round(1 / float(onv_cny), 2)
     print('Курс CNY→RUB:', cny)
     return cny, onv_cny
@@ -79,6 +79,8 @@ def extract_data_from_html(src):
 
 
 def download_baht(url):
+
+    print(f'def download_baht')
 
     # --- Настройки Selenium ---
     options = Options()
@@ -154,19 +156,27 @@ def download_baht(url):
 
 
 def convert(cny, thb):
+    print(f'def convert')
     cny = round(float(cny), 2)
+    print(f'cny = {cny}')
     thb = round(float(thb), 2)
+    print(f'thb = {thb}')
     res_convertion = round(cny * thb, 2)
+    print(f'res_convertion = {res_convertion}')
     return res_convertion
 
 
 # Главная логика скрипта
 def conversion_rate():
+    print('🟢 conversion_rate start')   # ← добавь сюда
     start_page = download_page(url_cny)
     if not start_page:
+        print('🔴 Не удалось скачать страницу')  # ← сюда
         return
     cny, onv_cny = extract_data_from_html(start_page)
+    print(f'🔵 extract_data_from_html -> {cny=}, {onv_cny=}')
     thb = download_baht(url_union_pay)
+    print(f'🟣 download_baht -> {thb=}')
     res = convert(cny, thb)
     request_time = datetime.now()
     return res, request_time, thb, cny, onv_cny

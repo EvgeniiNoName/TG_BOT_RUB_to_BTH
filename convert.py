@@ -144,7 +144,7 @@ def download_baht(url):
 
         match = re.search(r'1CNY\s*=\s*([\d.,]+)\s*THB', text)
         if match:
-            thb = round(float(match.group(1).replace(',', '')), 2)
+            thb = round(float(match.group(1).replace(',', '')), 3)
             print('Курс CNY→THB:', thb)
             return thb
         else:
@@ -157,11 +157,11 @@ def download_baht(url):
 
 def convert(cny, thb):
     print(f'def convert')
-    cny = round(float(cny), 2)
+    cny = round(float(cny), 3)
     print(f'cny = {cny}')
-    thb = round(float(thb), 2)
+    thb = round(float(thb), 3)
     print(f'thb = {thb}')
-    res_convertion = round(cny * thb, 2)
+    res_convertion = round(cny * thb, 3)
     print(f'res_convertion = {res_convertion}')
     return res_convertion
 

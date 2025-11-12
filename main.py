@@ -47,11 +47,11 @@ def calculation(res, baht):
     except ValueError:
         return None
 
-    rub = round(baht / res, 2)
+    rub = round(baht / res, 3)
 
     # Форматирование чисел по русскому стандарту
-    baht_str = f"{baht:,.2f}".replace(",", " ").replace(".", ",")
-    rub_str = f"{rub:,.2f}".replace(",", " ").replace(".", ",")
+    baht_str = f"{baht:,.3f}".replace(",", " ").replace(".", ",")
+    rub_str = f"{rub:,.3f}".replace(",", " ").replace(".", ",")
 
     return f"💰 {baht_str} бат = {rub_str} рублей"
 
@@ -59,7 +59,7 @@ def calculation(res, baht):
 def main():
     res, request_time, thb, cny, onv_cny = timeout()
     print(f'Курс RUB→THB: {res}')
-    print(f'Курс THB→RUB: {round(1 / res, 2)}')
+    print(f'Курс THB→RUB: {round(1 / res, 3)}')
     if cny and onv_cny:
         print(f'Курс RUB→CNY: {onv_cny}')
         print(f'Курс CNY→RUB: {cny}')

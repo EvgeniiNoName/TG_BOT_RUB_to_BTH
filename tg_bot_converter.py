@@ -54,7 +54,7 @@ def handle_message(message):
             
         msg_text += "-------------------\n"
         msg_text += f"1 RUB = {rate} THB\n"
-        msg_text += f"1 THB = {round(1 / rate, 2)} RUB"
+        msg_text += f"1 THB = {round(1 / rate, 3)} RUB"
 
         bot.send_message(chat_id, msg_text)
 

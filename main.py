@@ -8,64 +8,59 @@ CACHE_FILE = os.path.join(BASE_DIR, 'rate_cache.json')
 
 
 def timeout():
+    print (f'выполняю def timeout')
     # Если есть кэш
     if os.path.exists(CACHE_FILE):
+        print (f'def timeout: кэш есть')
         with open(CACHE_FILE, 'r') as f:
             data = json.load(f)
-            rate = data.get('rate')
+            rub_to_thb = data.get('rub_to_thb')
+            thb_to_rub = data.get('thb_to_rub')
             request_time = datetime.fromisoformat(data.get('time'))
-            thb = data.get('thb')
-            cny = data.get('cny')
-            onv_cny = data.get('onv_cny')
+            cny_to_thb = data.get('cny_to_thb')
+            cny_per_rub = data.get('cny_per_rub')
+            rub_per_cny = data.get('rub_per_cny')
 
             if datetime.now() - request_time < timedelta(hours=1):
-                return rate, request_time, thb, cny, onv_cny
+                print (f'def timeout: с предыдущего запроса прошло меньше часа')
+                return rub_to_thb, thb_to_rub, request_time, cny_to_thb, cny_per_rub, rub_per_cny
 
-    # Новый запрос
-    rate, request_time, thb, cny, onv_cny = conversion_rate()
+    # Новый запрос    
+    rub_to_thb, thb_to_rub, request_time, cny_to_thb, cny_per_rub, rub_per_cny = conversion_rate()
 
     # Сохраняем кэш со всеми значениями
     with open(CACHE_FILE, 'w') as f:
         json.dump({
-            'rate': rate,
+            'rub_to_thb': rub_to_thb,
+            'thb_to_rub': thb_to_rub,
             'time': request_time.isoformat(),
-            'thb': thb,
-            'cny': cny,
-            'onv_cny': onv_cny
+            'cny_to_thb': cny_to_thb,
+            'cny_per_rub': cny_per_rub,
+            'rub_per_cny': rub_per_cny
         }, f, ensure_ascii=False)
 
-    return rate, request_time, thb, cny, onv_cny
+    return rub_to_thb, thb_to_rub, request_time, cny_to_thb, cny_per_rub, rub_per_cny
 
 
-def calculation(res, baht):
-    """
-    Функция принимает курс (res) и сумму в батах (baht),
-    возвращает строку с красиво отформатированным результатом.
-    """
-    try:
-        baht = float(str(baht).replace(',', '.'))
-    except ValueError:
-        return None
+# def calculation(thb_to_rub, baht):
+#     """
+#     Функция принимает курс (res) и сумму в батах (baht),
+#     возвращает строку с красиво отформатированным результатом.
+#     """
+#     try:
+#         baht = float(str(baht).replace(',', '.'))
+#     except ValueError:
+#         return None
 
-    rub = round(baht / res, 3)
+#     # rub = round(baht / res, 2)
 
-    # Форматирование чисел по русскому стандарту
-    baht_str = f"{baht:,.3f}".replace(",", " ").replace(".", ",")
-    rub_str = f"{rub:,.3f}".replace(",", " ").replace(".", ",")
+#     # # Форматирование чисел по русскому стандарту
+#     # baht_str = f"{baht:,.2f}".replace(",", " ").replace(".", ",")
+#     # rub_str = f"{rub:,.2f}".replace(",", " ").replace(".", ",")
 
-    return f"💰 {baht_str} бат = {rub_str} рублей"
+#     # return f"💰 {baht_str} бат = {rub_str} рублей"
 
+#     rub = round(baht * thb_to_rub, 2)
 
-def main():
-    res, request_time, thb, cny, onv_cny = timeout()
-    print(f'Курс RUB→THB: {res}')
-    print(f'Курс THB→RUB: {round(1 / res, 3)}')
-    if cny and onv_cny:
-        print(f'Курс RUB→CNY: {onv_cny}')
-        print(f'Курс CNY→RUB: {cny}')
-    if thb:
-        print(f'Курс CNY→THB: {thb}')
+#     return rub, baht
 
-
-if __name__ == '__main__':
-    main()

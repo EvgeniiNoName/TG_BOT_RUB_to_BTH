@@ -8,41 +8,51 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import re
 from datetime import datetime
+from decimal import Decimal, ROUND_HALF_UP
+
+
+# ------------------------------- #
+#   Математическое округление     #
+# ------------------------------- #
+
+def rnd(x):
+    """Округление HALF_UP до 2 знаков"""
+    return float(Decimal(str(x)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
 
 
 # URL
-# url_cny = 'https://bankiros.ru/bank/rshb/currency/cny'
 url_cny = 'https://ru.myfin.by/bank/rshb/currency/krasnoyarsk'
 url_union_pay = 'https://www.unionpayintl.com/cn/rate/'
 
-# Заголовки для имитации реального пользователя
 headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 }
 
-# Функция для скачивания страницы
 
+# --------------------- #
+#   Скачивание HTML     #
+# --------------------- #
 
 def download_page(url):
-    print(f'Скачиваю: {url}')  # Отладка
+    print(f'Скачиваю: {url}')
     req = requests.get(url, headers=headers)
-    print(f'Статус ответа: {req.status_code}')  # Показываем статус код
-    if req.status_code == 200:
-        print('все ОК!')
-        # print(req.text)
-        src = req.text
-        return src
-    else:
-        print(f'Ошибка {req.status_code}: {url}')
+    print(f'Статус ответа: {req.status_code}')
+
+    if req.status_code != 200:
+        print(f'Ошибка {req.status_code}')
         return None
 
-# Функция для извлечения данных из HTML для поиска юаня
+    print('HTML загружен успешно')
+    return req.text
 
+
+# --------------------- #
+#   Извлечение RUB→CNY  #
+# --------------------- #
 
 def extract_data_from_html(src):
     soup = BeautifulSoup(src, 'lxml')
 
-    # ищем строку с Юанем
     row = None
     for tr in soup.find_all('tr'):
         a_tag = tr.find('a')
@@ -51,132 +61,117 @@ def extract_data_from_html(src):
             break
 
     if not row:
-        print("!!!_Не найдено значение для юаня в HTML.")
+        print("Не найдена строка с Юанем")
         return None
 
-    # находим все <td> в строке
     tds = row.find_all('td')
     if len(tds) < 3:
-        print("!!!_Недостаточно данных в строке.")
+        print("Недостаточно данных в строке")
         return None
 
-    onv_cny = tds[2].get_text(strip=True)  # третий <td> — продажа
-    print('Курс RUB→CNY:', onv_cny)
-    cny = round(1 / float(onv_cny), 2)
-    print('Курс CNY→RUB:', cny)
-    return cny, onv_cny
+    raw_rub_per_cny = float(tds[2].get_text(strip=True))
+    rub_per_cny = rnd(raw_rub_per_cny)
+    print(f'RUB→CNY (продажа): {rub_per_cny}')
+
+    cny_per_rub = rnd(1 / rub_per_cny)
+    print(f'CNY→RUB: {cny_per_rub}')
+
+    return rub_per_cny, cny_per_rub
 
 
-
-    # soup = BeautifulSoup(src, 'lxml')
-    # all = soup.find_all(
-    #     'div', class_='xxx-text-bold xxx-fs-24 xxx-adjustment-line-h')
-    # onv_cny = all[1].find('span').get_text(strip=True)
-    # print('Курс CNY→RUB: ', onv_cny)
-    # cny = round(1 / float(onv_cny), 2)
-    # print('Курс RUB→CNY: ', cny)
-    # return cny
-
+# --------------------- #
+#   Извлечение CNY→THB  #
+# --------------------- #
 
 def download_baht(url):
+    print('выполняю def download_baht')
+    print('def download_baht: Получаю курс CNY→THB через Selenium...')
 
-    print(f'def download_baht')
-
-    # --- Настройки Selenium ---
     options = Options()
-    options.add_argument("--headless")  # без GUI
+    options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--disable-gpu")
 
     driver = webdriver.Chrome(options=options)
 
     try:
         driver.get(url)
 
-        # -----------------------------
-        # 1. Выбираем базовую валюту THB
-        # -----------------------------
-        select_base = WebDriverWait(driver, 10).until(
+        WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.ID, 'baseCurrencys'))
-        )
-        select_base.click()
+        ).click()
         time.sleep(1)
 
-        thb_option = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable(
-                (By.CSS_SELECTOR, "#baseOPT a[val='THB']"))
-        )
-        thb_option.click()
+        WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, "#baseOPT a[val='THB']"))
+        ).click()
 
-        # -----------------------------
-        # 2. Выбираем валюту для конверсии CNY
-        # -----------------------------
-        select_trans = WebDriverWait(driver, 10).until(
+        WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.ID, 'transactionCurrencys'))
-        )
-        select_trans.click()
+        ).click()
         time.sleep(1)
 
-        cny_option = WebDriverWait(driver, 15).until(
-            EC.element_to_be_clickable(
-                (By.CSS_SELECTOR, "#tranOPT a[val='CNY']"))
-        )
-        cny_option.click()
+        WebDriverWait(driver, 15).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, "#tranOPT a[val='CNY']"))
+        ).click()
 
-        # -----------------------------
-        # 3. Нажимаем кнопку "查询"
-        # -----------------------------
-        submit_button = WebDriverWait(driver, 10).until(
+        WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, 'div.huilv-submit a'))
-        )
-        submit_button.click()
+        ).click()
+
         time.sleep(2)
 
-        # -----------------------------
-        # 4. Получаем результат
-        # -----------------------------
         res_div = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.ID, 'resultDiv'))
         )
-        text = res_div.text
-        # print("Полный текст:", text)
 
+        text = res_div.text
         match = re.search(r'1CNY\s*=\s*([\d.,]+)\s*THB', text)
+
         if match:
-            thb = round(float(match.group(1).replace(',', '')), 3)
-            print('Курс CNY→THB:', thb)
-            return thb
+            raw_value = float(match.group(1).replace(',', ''))
+            cny_to_thb = rnd(raw_value)
+            print(f'def download_baht: CNY→THB: {cny_to_thb}')
+            return cny_to_thb
         else:
-            print('Не удалось найти курс')
+            print('def download_baht: Не удалось найти курс CNY→THB')
             return None
 
     finally:
         driver.quit()
 
 
-def convert(cny, thb):
-    print(f'def convert')
-    cny = round(float(cny), 3)
-    print(f'cny = {cny}')
-    thb = round(float(thb), 3)
-    print(f'thb = {thb}')
-    res_convertion = round(cny * thb, 3)
-    print(f'res_convertion = {res_convertion}')
-    return res_convertion
+# --------------------- #
+#   Правильный расчёт   #
+# --------------------- #
+
+def convert(rub_per_cny, cny_to_thb):
+    raw = cny_to_thb / rub_per_cny
+    rub_to_thb = rnd(raw)
+    print(f'RUB→THB: {rub_to_thb}')
+    thb_to_rub = rnd(1 / rub_to_thb)
+    print(f'THB→RUB: {thb_to_rub}')
+    return rub_to_thb, thb_to_rub
 
 
-# Главная логика скрипта
+# --------------------- #
+#   Главная функция     #
+# --------------------- #
+
 def conversion_rate():
-    print('🟢 conversion_rate start')   # ← добавь сюда
-    start_page = download_page(url_cny)
-    if not start_page:
-        print('🔴 Не удалось скачать страницу')  # ← сюда
-        return
-    cny, onv_cny = extract_data_from_html(start_page)
-    print(f'🔵 extract_data_from_html -> {cny=}, {onv_cny=}')
-    thb = download_baht(url_union_pay)
-    print(f'🟣 download_baht -> {thb=}')
-    res = convert(cny, thb)
+    print('=== conversion_rate START ===')
+
+    html = download_page(url_cny)
+    rub_per_cny, cny_per_rub = extract_data_from_html(html)
+
+    cny_to_thb = download_baht(url_union_pay)
+
+    rub_to_thb, thb_to_rub = convert(rub_per_cny, cny_to_thb)
+
     request_time = datetime.now()
-    return res, request_time, thb, cny, onv_cny
+
+    print('=== conversion_rate END ===')
+
+    return rub_to_thb, thb_to_rub, request_time, cny_to_thb, cny_per_rub, rub_per_cny
+
+

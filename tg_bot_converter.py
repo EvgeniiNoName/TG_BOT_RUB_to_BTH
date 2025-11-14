@@ -1,6 +1,6 @@
 import telebot
 from telebot import types
-from main import timeout, calculation
+from main import timeout
 import os
 from dotenv import load_dotenv
 
@@ -40,21 +40,18 @@ def handle_message(message):
             chat_id, '⏳ Пожалуйста, подождите, получаю данные...')
 
         # Получаем все значения из кэша или нового запроса
-        rate, request_time, thb, cny, onv_cny = timeout()
+        rub_to_thb, thb_to_rub, request_time, cny_to_thb, cny_per_rub, rub_per_cny = timeout()
         bot.delete_message(chat_id, waiting_msg.message_id)
 
         # Формируем текст сообщения с промежуточными и конечными курсами
         msg_text = f"📊 Курс по состоянию на {request_time.strftime('%d.%m.%Y %H:%M')}:\n"
 
-        if onv_cny:
-            msg_text += f"1 CNY = {onv_cny} RUB\n"
-
-        if thb:
-            msg_text += f"1 CNY = {thb} THB: \n"
-            
+        msg_text = f"📊 Курс по состоянию на {request_time.strftime('%d.%m.%Y %H:%M')}:\n"
+        msg_text += f"1 CNY = {rub_per_cny} RUB\n"
+        msg_text += f"1 CNY = {cny_to_thb} THB\n"
         msg_text += "-------------------\n"
-        msg_text += f"1 RUB = {rate} THB\n"
-        msg_text += f"1 THB = {round(1 / rate, 3)} RUB"
+        msg_text += f"1 RUB = {rub_to_thb} THB\n"
+        msg_text += f"1 THB = {thb_to_rub} RUB"
 
         bot.send_message(chat_id, msg_text)
 
@@ -65,10 +62,15 @@ def handle_message(message):
 
     # --- 3. Пользователь вводит сумму ---
     elif user_states.get(chat_id) == 'awaiting_baht':
-        rate, _, _, _, _ = timeout()  # Получаем только rate для конверсии
-        result = calculation(rate, text)
-        if result:
-            bot.send_message(chat_id, result, reply_markup=main_menu())
+        _, thb_to_rub, _, _, _, _ = timeout()  # Получаем только rate для конверсии
+        try:
+            baht = float(str(text).replace(',', '.'))
+        except ValueError:
+            return None
+        if thb_to_rub:            
+            baht_str = f"{baht:,.2f}".replace(",", " ").replace(".", ",")
+            rub_str = f"{baht * thb_to_rub:,.2f}".replace(",", " ").replace(".", ",")
+            bot.send_message(chat_id, f"💰 {baht_str} бат = {rub_str} руб", reply_markup=main_menu())
         else:
             bot.send_message(chat_id, '❗ Пожалуйста, введите число.')
         user_states.pop(chat_id, None)
